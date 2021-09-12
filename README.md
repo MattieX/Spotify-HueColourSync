@@ -115,11 +115,6 @@ forever start -c python .\Documents\Github\Spotify-HueColourSync\Local_Spotify_D
 # Home-Assistant Configuration
 Add the following to your `configuration.yaml`
 ```yaml
-input_boolean:
-  album_or_artist:
-    name: Music to Sync to Album or Artist
-    icon: mdi:music
-
   sync_or_not:
     name: Sync Spotify to Lights or Not
     icon: mdi:autorenew
