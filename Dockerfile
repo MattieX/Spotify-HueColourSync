@@ -24,4 +24,4 @@ USER appuser
 EXPOSE 5000
 
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
-CMD ["python", "spotify_api.py"]
+CMD ["python", "Spotify-HueColourSync.py"]
