@@ -1,0 +1,37 @@
+version: '3.4'
+services:
+  spotify-huecoloursync:
+    container_name: Spotify-HueColourSync
+    image: spotifyhuesync
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    # Exposed to Host in order to Authenticate Spotify OAUTH on a Non-Headless System
+    ports:
+      - 5000:5000
+    environment:
+      - REDIS_HOST=<redis_docker_ip>
+      - REDIS_PORT=6379 # Must Match Redis Port, can be configured with a redis.conf
+      - SPOTIFY_CLIENT_ID=<spotify_client_id>
+      - SPOTIFY_CLIENT_SECRET=<spotify_client_secret>
+      - SPOTIFY_REDIRECT_URL=<spotify_redirect_url> # E.g. http://<docker_host_ip_address>:5000
+      - FLASK_SECRET_KEY=secretsalt # Used for Signed Cookies
+    networks:
+      default:
+        ipv4_address: <app_docker_ip>
+
+  redis:
+    container_name: db-Spotify-HueColourSync
+    image: redis:alpine
+    volumes:
+     - ./redis-data:/data
+    networks:
+      default:
+        ipv4_address: <redis_docker_ip>
+    expose:
+      - 6379
+
+networks:
+  default:
+    external:
+      name: <docker_network_name>

@@ -1,0 +1,770 @@
+[{
+    "id": "18be6f02cd7dec3f",
+    "type": "tab",
+    "label": "Spotify-HueColourSync",
+    "disabled": false,
+    "info": ""
+}, {
+    "id": "0468a2c18ed89e80",
+    "type": "http request",
+    "z": "18be6f02cd7dec3f",
+    "name": "Get Currently Playing JSON from Spotify API",
+    "method": "GET",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "x": 1790,
+    "y": 60,
+    "wires": [
+        ["060889b2c0e239da"]
+    ]
+}, {
+    "id": "74f4b099b3bc489a",
+    "type": "function",
+    "z": "18be6f02cd7dec3f",
+    "name": "Resize & Get Colours",
+    "func": "const Jimp = global.get('Jimp');\n\nimageURL = msg.topic\n\nconst image = await Jimp.read(imageURL);\n\nimage.resize(5, 1, Jimp.RESIZE_BICUBIC);\n\nconst lightOne = await image.getPixelColour(0, 0)\nconst lightTwo = await image.getPixelColour(1, 0);\nconst lightThree = await image.getPixelColour(2, 0);\nconst lightFour = await image.getPixelColour(3, 0);\nconst lightFive= await image.getPixelColour(4, 0);\n\nvar msg1 = { payload:\n    lightOne.toString(16).slice(0,6)\n}\nvar msg2 = { payload:\n    lightTwo.toString(16).slice(0,6)\n}\n\nvar msg3 = { payload:\n    lightThree.toString(16).slice(0,6)\n}\nvar msg4 = { payload:\n    lightFour.toString(16).slice(0,6)\n}\nvar msg5 = { payload:\n    lightFive.toString(16).slice(0,6)\n}\n\nreturn [ msg1, msg2, msg3, msg4, msg5 ];",
+    "outputs": 5,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1480,
+    "y": 700,
+    "wires": [
+        ["31502dfb97938ba9"],
+        ["5ca79472df4b1454"],
+        ["a86589919aec3c34"],
+        ["62b4ed7b0bb9d8f5"],
+        ["4ee04d56f9429558"]
+    ]
+}, {
+    "id": "31502dfb97938ba9",
+    "type": "function",
+    "z": "18be6f02cd7dec3f",
+    "name": "HEX to CSV",
+    "func": "const convertColor = global.get('convertColor');\n\nmsg.payload = convertColor.hex.hsv(msg.payload);\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "x": 1010,
+    "y": 940,
+    "wires": [
+        ["0e0e587b32105ee3"]
+    ]
+}, {
+    "id": "5ca79472df4b1454",
+    "type": "function",
+    "z": "18be6f02cd7dec3f",
+    "name": "HEX to CSV",
+    "func": "const convertColor = global.get('convertColor');\n\nmsg.payload = convertColor.hex.hsv(msg.payload);\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1210,
+    "y": 940,
+    "wires": [
+        ["38da80815f6b9cd4"]
+    ]
+}, {
+    "id": "0e0e587b32105ee3",
+    "type": "function",
+    "z": "18be6f02cd7dec3f",
+    "name": "Format Payload",
+    "func": "// If the saturation is less than 5, colour is probably white so set as 0\nif (msg.payload[1] < 5) {saturation = 0;}\nelse {\n    satDiff = 100 - msg.payload[1];\n    saturation = msg.payload[1] + (satDiff /3);\n}\n// But don't let the saturation be > 100 else HA with throw an error\nif (saturation > 100) {saturation=100;}\n\n\n// Construct payload to send to the light\nmsg = { payload: \n{\n  \"data\":\n  {\n    \"entity_id\" : \"light.pc_light\",\n    \"brightness\": \"200\",\n    \"hs_color\": [msg.payload[0], saturation],\n    \"transition\": 1\n  }\n}};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 940,
+    "y": 1020,
+    "wires": [
+        ["7cdad1abf7e640ab", "f9225fc3c6b8041b"]
+    ]
+}, {
+    "id": "38da80815f6b9cd4",
+    "type": "function",
+    "z": "18be6f02cd7dec3f",
+    "name": "Format Payload",
+    "func": "// If the saturation is less than 5, colour is probably white so set as 0\nif (msg.payload[1] < 5) {saturation = 0;}\nelse {\n    satDiff = 100 - msg.payload[1];\n    saturation = msg.payload[1] + (satDiff /3);\n}\n// But don't let the saturation be > 100 else HA with throw an error\nif (saturation > 100) {saturation=100;}\n\n\n// Construct payload to send to the light\nmsg = { payload: \n{\n  \"data\":\n  {\n    \"entity_id\" : \"light.left_light\",\n    \"brightness\": \"200\",\n    \"hs_color\": [msg.payload[0], saturation],\n    \"transition\": 1\n  }\n}};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1220,
+    "y": 1020,
+    "wires": [
+        ["a7fa351fce57caa1", "f9225fc3c6b8041b"]
+    ]
+}, {
+    "id": "7cdad1abf7e640ab",
+    "type": "api-call-service",
+    "z": "18be6f02cd7dec3f",
+    "name": "Leftmost Light",
+    "server": "5c54577.8b975a8",
+    "version": 3,
+    "debugenabled": false,
+    "service_domain": "light",
+    "service": "turn_on",
+    "entityId": "light.pc_light",
+    "data": "",
+    "dataType": "json",
+    "mergecontext": "",
+    "mustacheAltTags": false,
+    "outputProperties": [],
+    "queue": "none",
+    "x": 960,
+    "y": 1100,
+    "wires": [
+        []
+    ]
+}, {
+    "id": "a7fa351fce57caa1",
+    "type": "api-call-service",
+    "z": "18be6f02cd7dec3f",
+    "name": "Left Light",
+    "server": "5c54577.8b975a8",
+    "version": 3,
+    "debugenabled": false,
+    "service_domain": "light",
+    "service": "turn_on",
+    "entityId": "light.left_light",
+    "data": "",
+    "dataType": "json",
+    "mergecontext": "",
+    "mustacheAltTags": false,
+    "outputProperties": [],
+    "queue": "none",
+    "x": 1200,
+    "y": 1100,
+    "wires": [
+        []
+    ]
+}, {
+    "id": "f9225fc3c6b8041b",
+    "type": "debug",
+    "z": "18be6f02cd7dec3f",
+    "name": "Log Colours",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 2050,
+    "y": 720,
+    "wires": []
+}, {
+    "id": "a86589919aec3c34",
+    "type": "function",
+    "z": "18be6f02cd7dec3f",
+    "name": "HEX to CSV",
+    "func": "const convertColor = global.get('convertColor');\n\nmsg.payload = convertColor.hex.hsv(msg.payload);\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "x": 1450,
+    "y": 940,
+    "wires": [
+        ["fc9632e01b67617d"]
+    ]
+}, {
+    "id": "fc9632e01b67617d",
+    "type": "function",
+    "z": "18be6f02cd7dec3f",
+    "name": "Format Payload",
+    "func": "// If the saturation is less than 5, colour is probably white so set as 0\nif (msg.payload[1] < 5) {saturation = 0;}\nelse {\n    satDiff = 100 - msg.payload[1];\n    saturation = msg.payload[1] + (satDiff /3);\n}\n// But don't let the saturation be > 100 else HA with throw an error\nif (saturation > 100) {saturation=100;}\n\n\n// Construct payload to send to the light\nmsg = { payload: \n{\n  \"data\":\n  {\n    \"entity_id\" : \"light.right_light\",\n    \"brightness\": \"200\",\n    \"hs_color\": [msg.payload[0], saturation],\n    \"transition\": 1\n  }\n}};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1460,
+    "y": 1020,
+    "wires": [
+        ["b20faa626850975f", "f9225fc3c6b8041b"]
+    ]
+}, {
+    "id": "b20faa626850975f",
+    "type": "api-call-service",
+    "z": "18be6f02cd7dec3f",
+    "name": "Middle Light",
+    "server": "5c54577.8b975a8",
+    "version": 3,
+    "debugenabled": false,
+    "service_domain": "light",
+    "service": "turn_on",
+    "entityId": "light.right_light",
+    "data": "",
+    "dataType": "json",
+    "mergecontext": "",
+    "mustacheAltTags": false,
+    "outputProperties": [],
+    "queue": "none",
+    "x": 1450,
+    "y": 1100,
+    "wires": [
+        []
+    ]
+}, {
+    "id": "62b4ed7b0bb9d8f5",
+    "type": "function",
+    "z": "18be6f02cd7dec3f",
+    "name": "HEX to CSV",
+    "func": "const convertColor = global.get('convertColor');\n\nmsg.payload = convertColor.hex.hsv(msg.payload);\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "x": 1690,
+    "y": 960,
+    "wires": [
+        ["83343462c9aeeb84"]
+    ]
+}, {
+    "id": "83343462c9aeeb84",
+    "type": "function",
+    "z": "18be6f02cd7dec3f",
+    "name": "Format Payload",
+    "func": "// If the saturation is less than 5, colour is probably white so set as 0\nif (msg.payload[1] < 5) {saturation = 0;}\nelse {\n    satDiff = 100 - msg.payload[1];\n    saturation = msg.payload[1] + (satDiff /3);\n}\n// But don't let the saturation be > 100 else HA with throw an error\nif (saturation > 100) {saturation=100;}\n\n\n// Construct payload to send to the light\nmsg = { payload: \n{\n  \"data\":\n  {\n    \"entity_id\" : \"light.music_light\",\n    \"brightness\": \"200\",\n    \"hs_color\": [msg.payload[0], saturation],\n    \"transition\": 1\n  }\n}};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "x": 1700,
+    "y": 1040,
+    "wires": [
+        ["74ee3a2c56ac999b", "f9225fc3c6b8041b"]
+    ]
+}, {
+    "id": "74ee3a2c56ac999b",
+    "type": "api-call-service",
+    "z": "18be6f02cd7dec3f",
+    "name": "Right Light",
+    "server": "5c54577.8b975a8",
+    "version": 3,
+    "debugenabled": false,
+    "service_domain": "light",
+    "service": "turn_on",
+    "entityId": "light.music_light",
+    "data": "",
+    "dataType": "json",
+    "mergecontext": "",
+    "mustacheAltTags": false,
+    "outputProperties": [],
+    "queue": "none",
+    "x": 1690,
+    "y": 1100,
+    "wires": [
+        []
+    ]
+}, {
+    "id": "4ee04d56f9429558",
+    "type": "function",
+    "z": "18be6f02cd7dec3f",
+    "name": "HEX to CSV",
+    "func": "const convertColor = global.get('convertColor');\n\nmsg.payload = convertColor.hex.hsv(msg.payload);\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "x": 1930,
+    "y": 960,
+    "wires": [
+        ["26f2df00e79bed13"]
+    ]
+}, {
+    "id": "26f2df00e79bed13",
+    "type": "function",
+    "z": "18be6f02cd7dec3f",
+    "name": "Format Payload",
+    "func": "// If the saturation is less than 5, colour is probably white so set as 0\nif (msg.payload[1] < 5) {saturation = 0;}\nelse {\n    satDiff = 100 - msg.payload[1];\n    saturation = msg.payload[1] + (satDiff /3);\n}\n// But don't let the saturation be > 100 else HA with throw an error\nif (saturation > 100) {saturation=100;}\n\n\n// Construct payload to send to the light\nmsg = { payload: \n{\n  \"data\":\n  {\n    \"entity_id\" : \"light.bed_light\",\n    \"brightness\": \"200\",\n    \"hs_color\": [msg.payload[0], saturation],\n    \"transition\": 1\n  }\n}};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "x": 1940,
+    "y": 1040,
+    "wires": [
+        ["23dc9a748c1ecb75", "f9225fc3c6b8041b"]
+    ]
+}, {
+    "id": "23dc9a748c1ecb75",
+    "type": "api-call-service",
+    "z": "18be6f02cd7dec3f",
+    "name": "Rightmost Light",
+    "server": "5c54577.8b975a8",
+    "version": 3,
+    "debugenabled": false,
+    "service_domain": "light",
+    "service": "turn_on",
+    "entityId": "light.bed_light",
+    "data": "",
+    "dataType": "json",
+    "mergecontext": "",
+    "mustacheAltTags": false,
+    "outputProperties": [],
+    "queue": "none",
+    "x": 1920,
+    "y": 1100,
+    "wires": [
+        []
+    ]
+}, {
+    "id": "060889b2c0e239da",
+    "type": "api-current-state",
+    "z": "18be6f02cd7dec3f",
+    "name": "Read Switch state for: Album, Artist or Cover Image",
+    "server": "5c54577.8b975a8",
+    "version": 2,
+    "outputs": 1,
+    "halt_if": "",
+    "halt_if_type": "str",
+    "halt_if_compare": "is",
+    "entity_id": "input_select.album_artist_or_artist_cover_image",
+    "state_type": "str",
+    "blockInputOverrides": false,
+    "outputProperties": [{
+        "property": "switch_state",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entityState"
+    }, {
+        "property": "data",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entity"
+    }],
+    "x": 1510,
+    "y": 160,
+    "wires": [
+        ["dda3ec58dc0f3077", "e744eb54052a0348"]
+    ]
+}, {
+    "id": "e141907fbbdb36c2",
+    "type": "debug",
+    "z": "18be6f02cd7dec3f",
+    "name": "Log Image Being Parsed",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "topic",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1530,
+    "y": 600,
+    "wires": []
+}, {
+    "id": "dda3ec58dc0f3077",
+    "type": "debug",
+    "z": "18be6f02cd7dec3f",
+    "name": "Log Switch State",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "switch_state",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1990,
+    "y": 140,
+    "wires": []
+}, {
+    "id": "e744eb54052a0348",
+    "type": "function",
+    "z": "18be6f02cd7dec3f",
+    "name": "Check to use album, artist, or artist-cover artwork",
+    "func": "if (msg.switch_state == 'album'){\n    return [msg, null, null]\n} else if (msg.switch_state == 'artist'){\n    return [null, msg, null]\n} else if (msg.switch_state == 'artist-cover') {\n    return [null, null, msg]\n}\n\n\n",
+    "outputs": 3,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1490,
+    "y": 280,
+    "wires": [
+        ["373b9c7f77b33065"],
+        ["2ae40a45589442e0"],
+        ["58832180b8ad701a"]
+    ]
+}, {
+    "id": "58832180b8ad701a",
+    "type": "function",
+    "z": "18be6f02cd7dec3f",
+    "name": "Get Artist-Cover Image",
+    "func": "msg.topic = msg.payload['artistHeaderImage']\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1900,
+    "y": 420,
+    "wires": [
+        ["e141907fbbdb36c2", "74f4b099b3bc489a"]
+    ]
+}, {
+    "id": "373b9c7f77b33065",
+    "type": "function",
+    "z": "18be6f02cd7dec3f",
+    "name": "Get Album Image",
+    "func": "msg.topic = msg.payload['currentlyPlaying']['album_picture']\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1270,
+    "y": 420,
+    "wires": [
+        ["e141907fbbdb36c2", "74f4b099b3bc489a"]
+    ]
+}, {
+    "id": "2ae40a45589442e0",
+    "type": "function",
+    "z": "18be6f02cd7dec3f",
+    "name": "Get Artist Image",
+    "func": "msg.topic = msg.payload['currentArtistImage'];\nreturn msg;\n\n",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1600,
+    "y": 440,
+    "wires": [
+        ["e141907fbbdb36c2", "74f4b099b3bc489a"]
+    ]
+}, {
+    "id": "4263c7768efcbd49",
+    "type": "http request",
+    "z": "18be6f02cd7dec3f",
+    "name": "Check if Spotify Is Playing on Windows",
+    "method": "GET",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "x": 350,
+    "y": 360,
+    "wires": [
+        ["b9d4d4003b07013b", "9f63fc803c3775e2"]
+    ]
+}, {
+    "id": "b9d4d4003b07013b",
+    "type": "function",
+    "z": "18be6f02cd7dec3f",
+    "name": "Set Appropriate Message for Windows Playing",
+    "func": "// Spotify is Closed on Windows\nif (msg.payload['error'] == 'Closed'){\n    return [msg, null, null]\n// Spotify is Open but Paused on Windows\n} else if (msg.payload['error'] == 'Paused'){\n    return [null, msg, null ]\n// Spotify is Playing on Windows, this is the reported Artist & Track Based on Window Title\n} else if (msg.payload.hasOwnProperty('currently_playing')){\n    return [null, null, msg]\n} else {\n    return [null, null, null]\n}\n\n",
+    "outputs": 3,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 520,
+    "wires": [
+        [],
+        [],
+        ["2e99432738a94a94", "ed860d0b95ae2407"]
+    ]
+}, {
+    "id": "cb0439422f024c63",
+    "type": "inject",
+    "z": "18be6f02cd7dec3f",
+    "name": "Query Local Windows Script Every Second",
+    "props": [{
+        "p": "payload"
+    }, {
+        "p": "topic",
+        "vt": "str"
+    }],
+    "repeat": "1",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "2",
+    "topic": "",
+    "payloadType": "date",
+    "x": 210,
+    "y": 40,
+    "wires": [
+        ["9ab4d67fbfcfe43d"]
+    ]
+}, {
+    "id": "2e99432738a94a94",
+    "type": "debug",
+    "z": "18be6f02cd7dec3f",
+    "name": "Log Song Being Played Locally",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 750,
+    "y": 460,
+    "wires": []
+}, {
+    "id": "9f63fc803c3775e2",
+    "type": "debug",
+    "z": "18be6f02cd7dec3f",
+    "name": "Debug Check Playing Locally",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 720,
+    "y": 360,
+    "wires": []
+}, {
+    "id": "ed860d0b95ae2407",
+    "type": "rbe",
+    "z": "18be6f02cd7dec3f",
+    "name": "Block Flow Unless Output of Local Currently Playing Changes",
+    "func": "rbe",
+    "gap": "",
+    "start": "",
+    "inout": "out",
+    "septopics": true,
+    "property": "payload",
+    "topi": "topic",
+    "x": 460,
+    "y": 700,
+    "wires": [
+        ["c5553c0e88fc6fba", "55c19c39ddf47bbe"]
+    ]
+}, {
+    "id": "c5553c0e88fc6fba",
+    "type": "delay",
+    "z": "18be6f02cd7dec3f",
+    "name": "Wait 300ms for Spotify API To Catch Up",
+    "pauseType": "delay",
+    "timeout": "300",
+    "timeoutUnits": "milliseconds",
+    "rate": "1",
+    "nbRateUnits": "1",
+    "rateUnits": "second",
+    "randomFirst": "1",
+    "randomLast": "5",
+    "randomUnits": "seconds",
+    "drop": false,
+    "allowrate": false,
+    "x": 880,
+    "y": 600,
+    "wires": [
+        ["f2fc055eebf6ffd9"]
+    ]
+}, {
+    "id": "7a3d92694dda54a6",
+    "type": "change",
+    "z": "18be6f02cd7dec3f",
+    "name": "Set HTTP Request Timeout",
+    "rules": [{
+        "t": "set",
+        "p": "requestTimeout",
+        "pt": "msg",
+        "to": "3000",
+        "tot": "str"
+    }],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 120,
+    "y": 440,
+    "wires": [
+        ["4263c7768efcbd49"]
+    ]
+}, {
+    "id": "55c19c39ddf47bbe",
+    "type": "debug",
+    "z": "18be6f02cd7dec3f",
+    "name": "Log Song Being Played Locally (After Block Filter)",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 730,
+    "y": 800,
+    "wires": []
+}, {
+    "id": "8f346ac70ebde375",
+    "type": "api-current-state",
+    "z": "18be6f02cd7dec3f",
+    "name": "Read Sync Or Not State",
+    "server": "5c54577.8b975a8",
+    "version": 2,
+    "outputs": 1,
+    "halt_if": "",
+    "halt_if_type": "str",
+    "halt_if_compare": "is",
+    "entity_id": "input_boolean.sync_or_not",
+    "state_type": "str",
+    "blockInputOverrides": false,
+    "outputProperties": [{
+        "property": "boolean_state",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entityState"
+    }, {
+        "property": "data",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entity"
+    }],
+    "override_topic": false,
+    "state_location": "payload",
+    "override_payload": "msg",
+    "entity_location": "data",
+    "override_data": "msg",
+    "x": 350,
+    "y": 120,
+    "wires": [
+        ["9596997977966cb3"]
+    ]
+}, {
+    "id": "9596997977966cb3",
+    "type": "function",
+    "z": "18be6f02cd7dec3f",
+    "name": "Check whether to sync lights or not",
+    "func": "if (msg.boolean_state == 'on'){\n    return [msg, null]\n} else if (msg.boolean_state == 'off'){\n    return [null, msg]\n}\n",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 200,
+    "wires": [
+        ["56b17d222df1f0b5"],
+        []
+    ]
+}, {
+    "id": "f2fc055eebf6ffd9",
+    "type": "function",
+    "z": "18be6f02cd7dec3f",
+    "name": "Set  Persistent Headers For Flask Session",
+    "func": "var windows_flask_url = flow.get('windows_flask_url');\n\nmsg.headers = {};\nmsg.headers['Accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9';\nmsg.headers['Accept-Encoding'] = 'gzip, deflate';\nmsg.headers['Accept-Language'] = 'en-GB,en-US;q=0.9,en;q=0.8';\nmsg.headers['Cache-Control'] = 'max-age=0';\nmsg.headers['Connection'] = 'keep-alive';\nmsg.headers['Cookie'] = 'session=3b9ebaea-260c-4fe9-bf6f-aba9b984acf1.MzHTu_nbqFiKaPAKSazHzTXJbGI';\nmsg.headers['Host'] = windows_flask_url;\nmsg.headers['DNT'] = '1'\nmsg.headers['Upgrade-Insecure-Requests'] = '1'\nmsg.headers['User-Agent'] = 'curl/7.58.0'\n\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1120,
+    "y": 60,
+    "wires": [
+        ["f249a3606279b857"]
+    ]
+}, {
+    "id": "9ab4d67fbfcfe43d",
+    "type": "change",
+    "z": "18be6f02cd7dec3f",
+    "name": "CHANGE ME! - Windows & Docker Flask URL's",
+    "rules": [{
+        "t": "set",
+        "p": "windows_flask_url",
+        "pt": "flow",
+        "to": "http://192.168.2.225:8080",
+        "tot": "str"
+    }, {
+        "t": "set",
+        "p": "docker_flask_url",
+        "pt": "flow",
+        "to": "http://192.168.2.4:8081",
+        "tot": "str"
+    }],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 600,
+    "y": 40,
+    "wires": [
+        ["8f346ac70ebde375"]
+    ]
+}, {
+    "id": "56b17d222df1f0b5",
+    "type": "change",
+    "z": "18be6f02cd7dec3f",
+    "name": "Set Windows Flask URL",
+    "rules": [{
+        "t": "set",
+        "p": "url",
+        "pt": "msg",
+        "to": "windows_flask_url",
+        "tot": "flow"
+    }],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 330,
+    "y": 280,
+    "wires": [
+        ["4263c7768efcbd49"]
+    ]
+}, {
+    "id": "f249a3606279b857",
+    "type": "change",
+    "z": "18be6f02cd7dec3f",
+    "name": "Set Docker Flask URL",
+    "rules": [{
+        "t": "set",
+        "p": "url",
+        "pt": "msg",
+        "to": "docker_flask_url",
+        "tot": "flow"
+    }],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 1440,
+    "y": 60,
+    "wires": [
+        ["0468a2c18ed89e80"]
+    ]
+}, {
+    "id": "5c54577.8b975a8",
+    "type": "server",
+    "name": "Home Assistant",
+    "version": 1,
+    "legacy": false,
+    "addon": true,
+    "rejectUnauthorizedCerts": true,
+    "ha_boolean": "y|yes|true|on|home|open",
+    "connectionDelay": true,
+    "cacheJson": true
+}]
